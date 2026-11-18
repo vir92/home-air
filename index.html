@@ -1,0 +1,202 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0e1014">
+<title>Home Air</title>
+<style>
+:root{--bg:#f3f4f6;--card:#ffffff;--card2:#f1f3f6;--text:#111827;--muted:#6b7280;--line:#e5e7eb;--accent:#22c55e}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0e1014;--card:#171a21;--card2:#1d212a;--text:#eef0f4;--muted:#9aa2b1;--line:#2a2f3a}}
+:root[data-theme="dark"]{--bg:#0e1014;--card:#171a21;--card2:#1d212a;--text:#eef0f4;--muted:#9aa2b1;--line:#2a2f3a}
+*{box-sizing:border-box;margin:0}
+body{background:var(--bg);color:var(--text);font:16px/1.4 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;padding:16px 16px 28px;-webkit-font-smoothing:antialiased}
+.wrap{max-width:520px;margin:0 auto}
+header{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+.title{font-size:20px;font-weight:700}
+.live{display:flex;align-items:center;gap:6px;color:var(--muted);font-size:13px;margin-top:2px}
+.dot{width:8px;height:8px;border-radius:50%;background:#9ca3af}
+.dot.on{background:#22c55e;box-shadow:0 0 0 0 rgba(34,197,94,.6);animation:p 2s infinite}
+.dot.old{background:#f59e0b}
+@keyframes p{70%{box-shadow:0 0 0 8px rgba(34,197,94,0)}100%{box-shadow:0 0 0 0 rgba(34,197,94,0)}}
+.tag{font-size:12px;color:var(--muted);border:1px solid var(--line);border-radius:999px;padding:5px 10px}
+.seg{display:flex;background:var(--card);border:1px solid var(--line);border-radius:999px;padding:3px}
+.seg button{border:0;background:transparent;color:var(--muted);font:600 13px system-ui,sans-serif;padding:6px 12px;border-radius:999px;cursor:pointer}
+.seg button.on{background:var(--text);color:var(--bg)}
+.card{background:var(--card);border:1px solid var(--line);border-radius:20px;padding:20px;margin-bottom:14px}
+.hero{position:relative;overflow:hidden}
+.hero::before{content:"";position:absolute;inset:0;background:radial-gradient(120% 90% at 0% 0%,var(--accent),transparent 60%);opacity:.22;pointer-events:none}
+.hero>*{position:relative}
+.htop{display:flex;justify-content:space-between;align-items:flex-start;gap:12px}
+.lbl{color:var(--muted);font-size:13px;font-weight:600;letter-spacing:.02em;text-transform:uppercase}
+.sub{color:var(--muted);font-size:13px;margin-top:2px}
+.aqi{font-size:112px;font-weight:800;line-height:.95;letter-spacing:-.04em;color:var(--accent);font-variant-numeric:tabular-nums;margin-top:6px}
+.pill{display:inline-block;padding:8px 14px;border-radius:12px;font-weight:700;font-size:15px;background:var(--accent);color:#111;text-align:center}
+.advice{margin-top:14px;font-size:15px}
+.cmp{margin-top:14px;padding:10px 12px;border-radius:12px;background:var(--card2);font-size:14px;font-weight:600}
+.scale{margin-top:18px}
+.names{display:flex;font-size:10.5px;color:var(--muted);margin-bottom:6px}
+.names span{flex:1;text-align:center}
+.bar{display:flex;height:8px;border-radius:999px;overflow:hidden}
+.bar span{flex:1}
+.bwrap{position:relative}
+.mk{position:absolute;top:50%;width:18px;height:18px;margin:-9px 0 0 -9px;border-radius:50%;background:#fff;border:4px solid var(--accent);box-shadow:0 1px 4px rgba(0,0,0,.4)}
+.ticks{position:relative;height:16px;font-size:11px;color:var(--muted);margin-top:6px}
+.ticks span{position:absolute;transform:translateX(-50%)}
+.ticks span:first-child{transform:none}.ticks span:last-child{transform:translateX(-100%)}
+.pms{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:14px}
+.pm{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:14px 12px}
+.pm .n{font-size:13px;color:var(--muted);font-weight:600;display:flex;align-items:center;gap:6px}
+.pm .n i{width:8px;height:8px;border-radius:50%;display:inline-block;background:var(--line)}
+.pm .v{font-size:28px;font-weight:700;font-variant-numeric:tabular-nums;margin-top:4px}
+.pm .u{font-size:12px;color:var(--muted)}
+.out{display:flex;align-items:center;gap:16px}
+.oaqi{font-size:56px;font-weight:800;line-height:1;letter-spacing:-.03em;font-variant-numeric:tabular-nums;min-width:96px}
+.oright{flex:1;min-width:0}
+.opill{display:inline-block;padding:5px 10px;border-radius:10px;font-weight:700;font-size:13px;color:#111;background:var(--line)}
+.opm{margin-top:8px;font-size:14px}
+.osrc{margin-top:4px;font-size:12px;color:var(--muted)}
+.chead{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;gap:10px}
+.chead .t{font-weight:700}
+.legend{display:flex;gap:14px;font-size:12px;color:var(--muted);margin-bottom:8px}
+.legend i{display:inline-block;width:14px;height:3px;border-radius:2px;vertical-align:middle;margin-right:5px}
+canvas{width:100%;height:200px;display:block}
+.foot{color:var(--muted);font-size:12px;text-align:center;line-height:1.6}
+</style></head><body><div class="wrap">
+<header>
+ <div><div class="title">Home Air</div><div class="live"><span class="dot" id="dot"></span><span id="status">Connecting&hellip;</span></div></div>
+ <span class="tag">AQI (US)</span>
+</header>
+
+<div class="card hero">
+ <div class="htop">
+  <div><div class="lbl">Indoor AQI</div><div class="sub">Home &middot; PMS5003 sensor</div><div class="aqi" id="aqi">--</div></div>
+  <div class="pill" id="pill">&hellip;</div>
+ </div>
+ <div class="advice" id="advice">Loading the latest reading&hellip;</div>
+ <div class="cmp" id="cmp" style="display:none"></div>
+ <div class="scale">
+  <div class="names" id="names"></div>
+  <div class="bwrap"><div class="bar" id="bar"></div><div class="mk" id="mk" style="left:0"></div></div>
+  <div class="ticks" id="ticks"></div>
+ </div>
+</div>
+
+<div class="pms">
+ <div class="pm"><div class="n"><i></i>PM1.0</div><div class="v" id="p1">--</div><div class="u">&micro;g/m&sup3;</div></div>
+ <div class="pm"><div class="n"><i id="d25"></i>PM2.5</div><div class="v" id="p25">--</div><div class="u">&micro;g/m&sup3;</div></div>
+ <div class="pm"><div class="n"><i id="d10"></i>PM10</div><div class="v" id="p10">--</div><div class="u">&micro;g/m&sup3;</div></div>
+</div>
+
+<div class="card">
+ <div class="lbl" style="margin-bottom:12px">Outdoor AQI &middot; DAFI, Varanasi</div>
+ <div class="out">
+  <div class="oaqi" id="oaqi">--</div>
+  <div class="oright">
+   <span class="opill" id="opill">Loading&hellip;</span>
+   <div class="opm">PM2.5 <b id="op25">--</b> <span style="color:var(--muted);font-size:12px">&micro;g/m&sup3;</span></div>
+   <div class="osrc" id="owx"></div>
+  </div>
+ </div>
+</div>
+
+<div class="card">
+ <div class="chead"><div class="t">AQI history</div>
+  <div class="seg" id="rangeSeg"><button data-r="6h">6h</button><button data-r="24h">24h</button><button data-r="7d">7d</button></div></div>
+ <div class="legend"><span><i style="background:var(--text)"></i>Indoor</span><span><i style="background:var(--muted);opacity:.6"></i>Outdoor</span></div>
+ <canvas id="c"></canvas>
+</div>
+<div class="foot">Updated every minute from the home monitor via ThingSpeak<br>US AQI formula (same numbers as aqi.in &amp; IQAir)<br><span id="upd"></span></div>
+</div>
+<script>
+const CH=3585826, KEY='80QMISM148D3SA9M';   // read-only key
+const EDGES=[0,50,100,150,200,300,500];
+const BANDS=[
+ ['Good','#22c55e','Air is clean. Windows can stay open.'],
+ ['Moderate','#eab308','Acceptable. Very sensitive people should limit long exposure.'],
+ ['Poor','#f97316','Kids, elderly and asthma patients may feel discomfort. Run the purifier.'],
+ ['Unhealthy','#ef4444','Keep windows closed and run the purifier. Wear an N95 outside.'],
+ ['Severe','#a855f7','Avoid going out. Keep the room closed, purifier on high.'],
+ ['Hazardous','#be123c','Health alert: stay indoors with the purifier running.']];
+const RANGES={'6h':'minutes=360','24h':'days=1&average=10','7d':'days=7&average=60'};
+const $=id=>document.getElementById(id);
+const store={get(k,d){try{return localStorage.getItem(k)||d}catch(e){return d}},set(k,v){try{localStorage.setItem(k,v)}catch(e){}}};
+let range=store.get('range','24h');if(!RANGES[range])range='24h';
+let series=[];
+const bandOf=v=>{for(let i=0;i<6;i++)if(v<=EDGES[i+1])return i;return 5};
+const pos=v=>{const i=bandOf(v),f=Math.min(1,Math.max(0,(v-EDGES[i])/(EDGES[i+1]-EDGES[i])));return (i+f)/6*100};
+// PM2.5 / PM10 sub-index bands (US EPA 2024)
+const B25=[9,35.4,55.4,125.4,225.4],B10=[54,154,254,354,424];
+const pmBand=(v,t)=>{for(let i=0;i<5;i++)if(v<=t[i])return i;return 5};
+const num=v=>v==null||v===''?null:+v;
+function setSeg(){document.querySelectorAll('#rangeSeg button').forEach(b=>b.classList.toggle('on',b.dataset.r==range))}
+$('bar').innerHTML=BANDS.map(b=>'<span style="background:'+b[1]+'"></span>').join('');
+$('names').innerHTML=BANDS.map(b=>'<span>'+b[0]+'</span>').join('');
+$('ticks').innerHTML=EDGES.map((e,i)=>'<span style="left:'+(i/6*100)+'%">'+e+'</span>').join('');
+document.querySelectorAll('#rangeSeg button').forEach(b=>b.onclick=()=>{range=b.dataset.r;store.set('range',range);setSeg();loadHistory()});
+
+function ago(ms){const m=Math.round(ms/60000);if(m<1)return 'just now';if(m<60)return m+' min ago';const h=Math.floor(m/60);if(h<24)return h+' h '+(m%60)+' min ago';return Math.floor(h/24)+' days ago'}
+
+function render(f){
+ const aqi=num(f.field4);if(aqi==null)return;
+ const bi=bandOf(aqi),b=BANDS[bi];
+ document.documentElement.style.setProperty('--accent',b[1]);
+ $('aqi').textContent=Math.round(aqi);$('pill').textContent=b[0];$('pill').style.color=bi<=2?'#111':'#fff';
+ $('advice').textContent=b[2];$('mk').style.left=pos(aqi)+'%';
+ const p1=num(f.field1),p25=num(f.field2),p10=num(f.field3);
+ $('p1').textContent=p1!=null?Math.round(p1):'--';$('p25').textContent=p25!=null?Math.round(p25):'--';$('p10').textContent=p10!=null?Math.round(p10):'--';
+ if(p25!=null)$('d25').style.background=BANDS[pmBand(p25,B25)][1];
+ if(p10!=null)$('d10').style.background=BANDS[pmBand(p10,B10)][1];
+ const oa=num(f.field5);
+ if(oa!=null){const oi=bandOf(oa),ob=BANDS[oi];
+  $('oaqi').textContent=Math.round(oa);$('oaqi').style.color=ob[1];
+  $('opill').textContent=ob[0];$('opill').style.background=ob[1];$('opill').style.color=oi<=2?'#111':'#fff';
+  $('op25').textContent=num(f.field6)!=null?Math.round(num(f.field6)):'--';
+  const t=num(f.field7),h=num(f.field8);
+  $('owx').textContent=[t!=null?t+'°C':'',h!=null?'Humidity '+h+'%':''].filter(Boolean).join('  ·  ');
+  const diff=Math.round((1-aqi/oa)*100),c=$('cmp');c.style.display='block';
+  c.textContent=diff>=5?'↓ Indoor AQI is '+diff+'% lower than outside':diff<=-5?'↑ Indoor AQI is '+(-diff)+'% higher than outside — run the purifier':'≈ Indoor air is about the same as outside';
+ }else{$('opill').textContent='Not available'}
+ const age=Date.now()-new Date(f.created_at).getTime(),fresh=age<5*60000;
+ $('dot').className='dot '+(fresh?'on':'old');
+ $('status').textContent=fresh?'Live · '+ago(age):'Monitor offline · last reading '+ago(age);
+ $('upd').textContent='Last reading: '+new Date(f.created_at).toLocaleString();
+}
+
+async function loadLatest(){
+ try{const r=await fetch('https://api.thingspeak.com/channels/'+CH+'/feeds/last.json?api_key='+KEY,{cache:'no-store'});
+  const f=await r.json();if(f&&f.created_at)render(f);else{$('status').textContent='No data yet'}
+ }catch(e){$('dot').className='dot';$('status').textContent='Cannot reach ThingSpeak'}}
+
+async function loadHistory(){
+ try{const r=await fetch('https://api.thingspeak.com/channels/'+CH+'/feeds.json?api_key='+KEY+'&'+RANGES[range]+'&round=1',{cache:'no-store'});
+  const d=await r.json();
+  series=(d.feeds||[]).map(f=>({t:new Date(f.created_at).getTime(),i:num(f.field4),o:num(f.field5)})).filter(p=>p.i!=null||p.o!=null);
+  draw();
+ }catch(e){}}
+
+function draw(){
+ const c=$('c'),r=devicePixelRatio||1,W=c.clientWidth,H=c.clientHeight;
+ c.width=W*r;c.height=H*r;const g=c.getContext('2d');g.scale(r,r);
+ const cs=getComputedStyle(document.documentElement),muted=cs.getPropertyValue('--muted').trim(),line=cs.getPropertyValue('--line').trim();
+ const span={'6h':6,'24h':24,'7d':168}[range]*3600e3,now=Date.now(),t0=now-span;
+ const pts=series.filter(p=>p.t>=t0);
+ const pad={l:30,r:6,t:10,b:20},w=W-pad.l-pad.r,hh=H-pad.t-pad.b;
+ const vals=pts.flatMap(p=>[p.i,p.o]).filter(v=>v!=null);
+ const max=Math.max(60,...vals)*1.12,X=t=>pad.l+w*(t-t0)/span,Y=v=>pad.t+hh-v/max*hh;
+ g.font='11px system-ui,sans-serif';g.lineWidth=1;
+ for(const e of EDGES){if(e>max)continue;g.strokeStyle=line;g.beginPath();g.moveTo(pad.l,Y(e));g.lineTo(W-pad.r,Y(e));g.stroke();g.fillStyle=muted;g.fillText(e,2,Y(e)+4)}
+ g.fillStyle=muted;g.fillText('-'+range,pad.l,H-4);g.textAlign='right';g.fillText('now',W-pad.r,H-4);g.textAlign='left';
+ if(pts.length<2){g.fillText('Collecting data…',pad.l+8,pad.t+20);return}
+ const gap=Math.max(15*60e3,span/40);
+ // outdoor: thin muted line
+ g.strokeStyle=muted;g.globalAlpha=.6;g.lineWidth=1.5;g.setLineDash([4,3]);g.beginPath();let on=false,prev=0;
+ for(const p of pts){if(p.o==null){on=false;continue}if(on&&p.t-prev<gap)g.lineTo(X(p.t),Y(p.o));else g.moveTo(X(p.t),Y(p.o));on=true;prev=p.t}
+ g.stroke();g.setLineDash([]);g.globalAlpha=1;
+ // indoor: thick line coloured by band
+ g.lineWidth=2.5;g.lineJoin='round';g.lineCap='round';
+ for(let k=1;k<pts.length;k++){const a=pts[k-1],b=pts[k];if(a.i==null||b.i==null||b.t-a.t>gap)continue;
+  g.strokeStyle=BANDS[bandOf(b.i)][1];g.beginPath();g.moveTo(X(a.t),Y(a.i));g.lineTo(X(b.t),Y(b.i));g.stroke()}
+}
+setSeg();loadLatest();loadHistory();
+setInterval(loadLatest,30000);setInterval(loadHistory,5*60000);
+addEventListener('resize',draw);
+</script></body></html>
