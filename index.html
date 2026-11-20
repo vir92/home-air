@@ -66,14 +66,14 @@ header{display:flex;align-items:center;justify-content:space-between;margin-bott
 .dayp input.on{border-color:var(--text)}
 .cwrap{position:relative}
 canvas{width:100%;height:250px;display:block;touch-action:pan-y;cursor:crosshair}
-.tip{position:absolute;top:2px;left:0;display:none;pointer-events:none;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:9px 11px;font-size:12.5px;line-height:1.5;box-shadow:0 6px 20px rgba(0,0,0,.25);min-width:170px;white-space:nowrap;z-index:2}
-.tip .tt{font-weight:700;margin-bottom:3px}
-.tip .tr{display:flex;align-items:center;gap:6px}
-.tip .tr b{margin-left:auto;padding-left:10px;font-size:15px;font-variant-numeric:tabular-nums}
+.tip{position:absolute;top:0;left:0;display:none;pointer-events:none;background:var(--card);border:1px solid var(--line);border-radius:9px;padding:5px 8px;font-size:11px;line-height:1.35;box-shadow:0 3px 10px rgba(0,0,0,.2);white-space:nowrap;z-index:2;opacity:.94}
+.tip .tt{color:var(--muted);font-size:10.5px}
+.tip .tr{display:flex;align-items:center;gap:5px}
+.tip .tr b{font-size:14px;font-variant-numeric:tabular-nums}
 .tip .tr i{width:9px;height:9px;border-radius:50%;flex:none}
 .tip .tr i.dash{width:12px;height:0;border-radius:0;border-top:2px dashed var(--muted)}
-.tip .chip{font-size:10.5px;font-weight:700;padding:0 6px;border-radius:6px}
-.tip .ts{color:var(--muted);font-size:11.5px}
+.tip .chip{font-size:10px;font-weight:700;padding:0 5px;border-radius:5px}
+.tip .ts{color:var(--muted);font-size:10.5px}
 .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:12px}
 .st{background:var(--card2);border-radius:12px;padding:8px 9px;min-width:0}
 .sk{font-size:11px;color:var(--muted);font-weight:600}
@@ -315,29 +315,23 @@ function draw(){
  const x=X(p.t);
  g.strokeStyle=text;g.globalAlpha=.45;g.lineWidth=1;g.beginPath();g.moveTo(Math.round(x)+.5,pad.t);g.lineTo(Math.round(x)+.5,pad.t+hh);g.stroke();g.globalAlpha=1;
  const dot=(val,fill)=>{g.beginPath();g.arc(x,Y(val),5,0,7);g.fillStyle=fill;g.fill();g.lineWidth=2;g.strokeStyle=card;g.stroke()};
- if(p.o!=null)dot(p.o,muted);
- if(p.i!=null)dot(p.i,BANDS[bandOf(p.i)][1]);
- showTip(p,x);
+  if(p.i!=null)dot(p.i,BANDS[bandOf(p.i)][1]);
+ showTip(p,x,Y(p.i??0),pad.t+hh);
 }
 
 function chip(v){const i=bandOf(v),b=BANDS[i];return '<span class="chip" style="background:'+b[1]+';color:'+(i<=2?'#111':'#fff')+'">'+b[0]+'</span>'}
-function showTip(p,x){
+function showTip(p,x,y,bottom){
  const R=RANGES[range],tip=$('tip');
- const when=R.daily?new Date(p.t).toLocaleDateString('en-IN',{weekday:'short',day:'numeric',month:'short',year:'numeric'})
-  :new Date(p.t).toLocaleString('en-IN',{weekday:'short',day:'numeric',month:'short',hour:'numeric',minute:'2-digit',hour12:true});
- let h='<div class="tt">'+when+'</div>';
- if(p.i!=null){h+='<div class="tr"><i style="background:'+BANDS[bandOf(p.i)][1]+'"></i>Indoor '+chip(p.i)+'<b>'+Math.round(p.i)+'</b></div>';
-  const pm=[];if(p.p25!=null)pm.push('PM2.5 '+Math.round(p.p25));if(p.p10!=null)pm.push('PM10 '+Math.round(p.p10));
-  if(pm.length)h+='<div class="ts">'+pm.join(' · ')+' µg/m³</div>';
-  if(R.daily&&p.imin!=null)h+='<div class="ts">Low '+Math.round(p.imin)+' · High '+Math.round(p.imax)+'</div>'}
- if(p.o!=null)h+='<div class="tr"><i class="dash"></i>Outdoor '+chip(p.o)+'<b>'+Math.round(p.o)+'</b></div>';
- if(p.i!=null&&p.o){const d=Math.round((1-p.i/p.o)*100);h+='<div class="ts">'+(d>=0?'Indoor '+d+'% lower than outside':'Indoor '+(-d)+'% higher than outside')+'</div>'}
- const kind=R.daily?'Daily average':R.avg==60?'1-hour average':R.avg?R.avg+'-minute average':'';
- if(kind)h+='<div class="ts">'+kind+'</div>';
- tip.innerHTML=h;tip.style.display='block';
+ if(p.i==null){tip.style.display='none';return}
+ const when=R.daily?new Date(p.t).toLocaleDateString('en-IN',{weekday:'short',day:'numeric',month:'short'})+' · avg'
+  :new Date(p.t).toLocaleString('en-IN',{day:'numeric',month:'short',hour:'numeric',minute:'2-digit',hour12:true});
+ const pm=[];if(p.p25!=null)pm.push('PM2.5 '+Math.round(p.p25));if(p.p10!=null)pm.push('PM10 '+Math.round(p.p10));
+ tip.innerHTML='<div class="tt">'+when+'</div><div class="tr"><b>'+Math.round(p.i)+'</b>'+chip(p.i)+'</div>'+(pm.length?'<div class="ts">'+pm.join(' · ')+'</div>':'');
+ tip.style.display='block';
  const cw=$('cwrap').clientWidth,tw=tip.offsetWidth;
- let l=x+14;if(l+tw>cw)l=x-14-tw;if(l<0)l=Math.max(0,Math.min(cw-tw,x-tw/2));
- tip.style.left=l+'px';
+ let l=x+10;if(l+tw>cw)l=x-10-tw;if(l<0)l=Math.max(0,Math.min(cw-tw,x-tw/2));
+// sit in the half of the chart away from the line so it never covers it
+ tip.style.left=l+'px';tip.style.top=(y<bottom/2?bottom-tip.offsetHeight-2:0)+'px';
 }
 
 function stats(){
