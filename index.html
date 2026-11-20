@@ -74,11 +74,6 @@ canvas{width:100%;height:250px;display:block;touch-action:pan-y;cursor:crosshair
 .tip .tr i.dash{width:12px;height:0;border-radius:0;border-top:2px dashed var(--muted)}
 .tip .chip{font-size:10px;font-weight:700;padding:0 5px;border-radius:5px}
 .tip .ts{color:var(--muted);font-size:10.5px}
-.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:12px}
-.st{background:var(--card2);border-radius:12px;padding:8px 9px;min-width:0}
-.sk{font-size:11px;color:var(--muted);font-weight:600}
-.sv{font-size:20px;font-weight:700;font-variant-numeric:tabular-nums}
-.ss{font-size:10.5px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .cfoot{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-top:12px;font-size:12px;color:var(--muted);flex-wrap:wrap}
 .cfoot a{color:var(--muted)}
 .btn{border:1px solid var(--line);background:transparent;color:var(--text);font:600 12px system-ui,sans-serif;padding:6px 11px;border-radius:999px;cursor:pointer}
@@ -129,7 +124,6 @@ canvas{width:100%;height:250px;display:block;touch-action:pan-y;cursor:crosshair
   <label class="dayp">Pick a day <input type="date" id="day"></label>
  </div>
  <div class="cwrap" id="cwrap"><canvas id="c"></canvas><div class="tip" id="tip"></div></div>
- <div class="stats" id="stats"></div>
  <div class="cfoot"><span id="cnote"></span><span><a href="https://github.com/vir92/home-air/tree/main/data" target="_blank" rel="noopener">Archive</a> &nbsp;<button class="btn" id="dl">Download CSV</button></span></div>
 </div>
 <div class="foot">Updated every minute from the home monitor via ThingSpeak<br>Saved to the archive every night<br>US AQI formula (same numbers as aqi.in &amp; IQAir)<br><span id="upd"></span></div>
@@ -230,7 +224,7 @@ async function fetchDaily(){
 }
 async function loadHistory(quiet){
  const R=RANGES[range],id=++reqId;
- if(!quiet){loading=true;$('cnote').textContent='Loading…';series=[];draw();$('stats').innerHTML=''}
+ if(!quiet){loading=true;$('cnote').textContent='Loading…';series=[];draw()}
  try{let pts,t0,t1;
   if(R.daily){pts=await fetchDaily();
    if(pts.length){t0=pts[0].t-.6*DAY;t1=pts[pts.length-1].t+.6*DAY}else{t1=Date.now();t0=t1-7*DAY}}
@@ -242,7 +236,7 @@ async function loadHistory(quiet){
   loading=false;series=pts;dom=[t0,t1];
   $('cnote').textContent=range=='day'?'1-minute readings · '+new Date(t0).toLocaleDateString('en-IN',{weekday:'long',day:'numeric',month:'short'})
    :R.daily&&!pts.length?'The archive adds one row each night. Check back tomorrow.':R.note;
-  draw();stats();
+  draw();
  }catch(e){if(id==reqId){loading=false;$('cnote').textContent='Could not load history';draw()}}
 }
 
@@ -332,19 +326,6 @@ function showTip(p,x,y,bottom){
  let l=x+10;if(l+tw>cw)l=x-10-tw;if(l<0)l=Math.max(0,Math.min(cw-tw,x-tw/2));
 // sit in the half of the chart away from the line so it never covers it
  tip.style.left=l+'px';tip.style.top=(y<bottom/2?bottom-tip.offsetHeight-2:0)+'px';
-}
-
-function stats(){
- const R=RANGES[range],pts=series.filter(p=>p.t>=dom[0]&&p.t<=dom[1]);
- const I=pts.map(p=>p.i).filter(x=>x!=null),O=pts.map(p=>p.o).filter(x=>x!=null);
- if(!I.length){$('stats').innerHTML='';return}
- const avg=a=>a.reduce((s,x)=>s+x,0)/a.length;
- const lo=R.daily?Math.min(...pts.map(p=>p.imin??p.i)):Math.min(...I),hi=R.daily?Math.max(...pts.map(p=>p.imax??p.i)):Math.max(...I);
- const ai=avg(I),ao=O.length?avg(O):null;
- const cell=(k,x,sub)=>'<div class="st"><div class="sk">'+k+'</div><div class="sv" style="color:'+(x==null?'var(--muted)':BANDS[bandOf(x)][1])+'">'+(x==null?'--':Math.round(x))+'</div><div class="ss">'+sub+'</div></div>';
- const d=ao?Math.round((1-ai/ao)*100):null;
- $('stats').innerHTML=cell('Average',ai,BANDS[bandOf(ai)][0])+cell('Lowest',lo,BANDS[bandOf(lo)][0])+cell('Highest',hi,BANDS[bandOf(hi)][0])
-  +cell('Outside',ao,d==null?'':'indoor '+(d>=0?'−'+d:'+'+(-d))+'%');
 }
 
 $('dl').onclick=()=>{
