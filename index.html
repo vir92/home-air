@@ -48,12 +48,13 @@ header{display:flex;align-items:center;justify-content:space-between;margin-bott
 .pm .n i{width:8px;height:8px;border-radius:50%;display:inline-block;background:var(--line)}
 .pm .v{font-size:28px;font-weight:700;font-variant-numeric:tabular-nums;margin-top:4px}
 .pm .u{font-size:12px;color:var(--muted)}
-.out{display:flex;align-items:center;gap:16px}
-.oaqi{font-size:56px;font-weight:800;line-height:1;letter-spacing:-.03em;font-variant-numeric:tabular-nums;min-width:96px}
-.oright{flex:1;min-width:0}
-.opill{display:inline-block;padding:5px 10px;border-radius:10px;font-weight:700;font-size:13px;color:#111;background:var(--line)}
-.opm{margin-top:8px;font-size:14px}
-.osrc{margin-top:4px;font-size:12px;color:var(--muted)}
+.ocard{padding:16px}
+.aqiw{min-height:180px;border-radius:16px;overflow:hidden}
+.aqiw iframe{display:block;min-height:180px}
+.opill{display:inline-block;padding:1px 7px;border-radius:6px;font-weight:700;font-size:11px;color:#111;background:var(--line)}
+.osec{margin-top:10px;font-size:12px;color:var(--muted)}
+.osec b{color:var(--text)}
+#owx{display:none}
 .chead{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;gap:10px;flex-wrap:wrap}
 .chead .t{font-weight:700}
 .chead .seg button{padding:6px 10px}
@@ -104,16 +105,11 @@ canvas{width:100%;height:250px;display:block;touch-action:pan-y;cursor:crosshair
  <div class="pm"><div class="n"><i id="d10"></i>PM10</div><div class="v" id="p10">--</div><div class="u">&micro;g/m&sup3;</div></div>
 </div>
 
-<div class="card">
- <div class="lbl" style="margin-bottom:12px">Outdoor AQI &middot; DAFI, Varanasi</div>
- <div class="out">
-  <div class="oaqi" id="oaqi">--</div>
-  <div class="oright">
-   <span class="opill" id="opill">Loading&hellip;</span>
-   <div class="opm">PM2.5 <b id="op25">--</b> <span style="color:var(--muted);font-size:12px">&micro;g/m&sup3;</span></div>
-   <div class="osrc" id="owx"></div>
-  </div>
- </div>
+<div class="card ocard">
+ <div class="lbl" style="margin-bottom:10px">Outdoor AQI &middot; Bhagwanpur</div>
+ <!-- official aqi.in widget (live, from aqi.in) -->
+ <div class="aqiw" data-aqi-widget-payload="https://www.aqi.in/widget/809a2091c8d6b6254d5f"><script src="https://www.aqi.in/assets/scripts/widget.min.js"></script></div>
+ <div class="osec">Graph&rsquo;s outdoor line (IQAir): <b id="oaqi">--</b> <span class="opill" id="opill">&hellip;</span> &middot; PM2.5 <b id="op25">--</b><div id="owx"></div></div>
 </div>
 
 <div class="card">
