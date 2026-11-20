@@ -36,8 +36,9 @@ def day_rows(day):
 
 
 def summary(day, rows):
-    col = lambda i: [float(r[i]) for r in rows if r[i] != ""]
-    ind, pm, out = col(1), col(3), col(5)
+    good = [r for r in rows if r[3] not in ("", "0", "0.0") or r[4] not in ("", "0", "0.0", "0.1")]  # skip all-zero sensor glitches
+    col = lambda i, rs: [float(r[i]) for r in rs if r[i] != ""]
+    ind, pm, out = col(1, good), col(3, good), col(5, rows)
     avg = lambda a: f"{sum(a) / len(a):.1f}" if a else ""
     return [day.isoformat(), len(rows), avg(ind), f"{min(ind):.0f}" if ind else "",
             f"{max(ind):.0f}" if ind else "", avg(pm), avg(out)]

@@ -218,12 +218,13 @@ async function fetchSpan(t0,t1,avg){
  const m=new Map();
  for(const d of await Promise.all(jobs))for(const f of d.feeds||[]){
   const p={t:new Date(f.created_at).getTime(),i:num(f.field4),o:num(f.field5),p1:num(f.field1),p25:num(f.field2),p10:num(f.field3),op:num(f.field6),tc:num(f.field7),hu:num(f.field8)};
+  if(p.p25===0&&!p.p10){p.i=p.p1=p.p25=p.p10=null}   // all-zero frame = sensor glitch, not clean air
   if(p.i!=null||p.o!=null)m.set(p.t,p)}
  return [...m.values()].sort((a,b)=>a.t-b.t);
 }
 async function fetchDaily(){
  const r=await fetch(ARCHIVE+'?t='+Date.now(),{cache:'no-store'});if(!r.ok)return [];
- const rows=(await r.text()).trim().split('\n'),h=rows.shift().split(',');
+ const rows=(await r.text()).trim().split(/\r?\n/),h=rows.shift().split(',');
  return rows.map(l=>{const v=l.split(','),o={};h.forEach((k,j)=>o[k]=v[j]);return o}).filter(o=>+o.readings>0)
   .map(o=>({t:new Date(o.date+'T12:00:00+05:30').getTime(),date:o.date,n:+o.readings,i:num(o.indoor_avg),imin:num(o.indoor_min),imax:num(o.indoor_max),p25:num(o.pm25_avg),o:num(o.outdoor_avg)}));
 }
