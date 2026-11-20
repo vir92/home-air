@@ -1,0 +1,19 @@
+name: Archive AQI data
+on:
+  schedule:
+    - cron: "45 18 * * *"   # 00:15 India time, every night
+  workflow_dispatch:        # lets you run it by hand from the Actions tab
+permissions:
+  contents: write
+jobs:
+  archive:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: python3 scripts/archive.py
+      - name: Commit new data
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data
+          git diff --cached --quiet || { git commit -m "Archive AQI data $(date -u +%F)"; git push; }

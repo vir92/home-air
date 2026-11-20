@@ -54,11 +54,34 @@ header{display:flex;align-items:center;justify-content:space-between;margin-bott
 .opill{display:inline-block;padding:5px 10px;border-radius:10px;font-weight:700;font-size:13px;color:#111;background:var(--line)}
 .opm{margin-top:8px;font-size:14px}
 .osrc{margin-top:4px;font-size:12px;color:var(--muted)}
-.chead{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;gap:10px}
+.chead{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;gap:10px;flex-wrap:wrap}
 .chead .t{font-weight:700}
-.legend{display:flex;gap:14px;font-size:12px;color:var(--muted);margin-bottom:8px}
+.chead .seg button{padding:6px 10px}
+.crow{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:8px;flex-wrap:wrap}
+.legend{display:flex;gap:14px;font-size:12px;color:var(--muted)}
 .legend i{display:inline-block;width:14px;height:3px;border-radius:2px;vertical-align:middle;margin-right:5px}
-canvas{width:100%;height:200px;display:block}
+.legend i.dash{height:0;border-top:2px dashed var(--muted);border-radius:0}
+.dayp{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--muted)}
+.dayp input{font:12px system-ui,sans-serif;color:var(--text);background:var(--card2);border:1px solid var(--line);border-radius:8px;padding:4px 6px;color-scheme:light dark}
+.dayp input.on{border-color:var(--text)}
+.cwrap{position:relative}
+canvas{width:100%;height:250px;display:block;touch-action:pan-y;cursor:crosshair}
+.tip{position:absolute;top:2px;left:0;display:none;pointer-events:none;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:9px 11px;font-size:12.5px;line-height:1.5;box-shadow:0 6px 20px rgba(0,0,0,.25);min-width:170px;white-space:nowrap;z-index:2}
+.tip .tt{font-weight:700;margin-bottom:3px}
+.tip .tr{display:flex;align-items:center;gap:6px}
+.tip .tr b{margin-left:auto;padding-left:10px;font-size:15px;font-variant-numeric:tabular-nums}
+.tip .tr i{width:9px;height:9px;border-radius:50%;flex:none}
+.tip .tr i.dash{width:12px;height:0;border-radius:0;border-top:2px dashed var(--muted)}
+.tip .chip{font-size:10.5px;font-weight:700;padding:0 6px;border-radius:6px}
+.tip .ts{color:var(--muted);font-size:11.5px}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:12px}
+.st{background:var(--card2);border-radius:12px;padding:8px 9px;min-width:0}
+.sk{font-size:11px;color:var(--muted);font-weight:600}
+.sv{font-size:20px;font-weight:700;font-variant-numeric:tabular-nums}
+.ss{font-size:10.5px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cfoot{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-top:12px;font-size:12px;color:var(--muted);flex-wrap:wrap}
+.cfoot a{color:var(--muted)}
+.btn{border:1px solid var(--line);background:transparent;color:var(--text);font:600 12px system-ui,sans-serif;padding:6px 11px;border-radius:999px;cursor:pointer}
 .foot{color:var(--muted);font-size:12px;text-align:center;line-height:1.6}
 </style></head><body><div class="wrap">
 <header>
@@ -100,11 +123,16 @@ canvas{width:100%;height:200px;display:block}
 
 <div class="card">
  <div class="chead"><div class="t">AQI history</div>
-  <div class="seg" id="rangeSeg"><button data-r="6h">6h</button><button data-r="24h">24h</button><button data-r="7d">7d</button></div></div>
- <div class="legend"><span><i style="background:var(--text)"></i>Indoor</span><span><i style="background:var(--muted);opacity:.6"></i>Outdoor</span></div>
- <canvas id="c"></canvas>
+  <div class="seg" id="rangeSeg"><button data-r="6h">6h</button><button data-r="24h">24h</button><button data-r="7d">7d</button><button data-r="30d">30d</button><button data-r="all">All</button></div></div>
+ <div class="crow">
+  <div class="legend"><span><i style="background:var(--text)"></i>Indoor</span><span><i class="dash"></i>Outdoor</span></div>
+  <label class="dayp">Pick a day <input type="date" id="day"></label>
+ </div>
+ <div class="cwrap" id="cwrap"><canvas id="c"></canvas><div class="tip" id="tip"></div></div>
+ <div class="stats" id="stats"></div>
+ <div class="cfoot"><span id="cnote"></span><span><a href="https://github.com/vir92/home-air/tree/main/data" target="_blank" rel="noopener">Archive</a> &nbsp;<button class="btn" id="dl">Download CSV</button></span></div>
 </div>
-<div class="foot">Updated every minute from the home monitor via ThingSpeak<br>US AQI formula (same numbers as aqi.in &amp; IQAir)<br><span id="upd"></span></div>
+<div class="foot">Updated every minute from the home monitor via ThingSpeak<br>Saved to the archive every night<br>US AQI formula (same numbers as aqi.in &amp; IQAir)<br><span id="upd"></span></div>
 </div>
 <script>
 const CH=3585826, KEY='80QMISM148D3SA9M';   // read-only key
@@ -116,22 +144,34 @@ const BANDS=[
  ['Unhealthy','#ef4444','Keep windows closed and run the purifier. Wear an N95 outside.'],
  ['Severe','#a855f7','Avoid going out. Keep the room closed, purifier on high.'],
  ['Hazardous','#be123c','Health alert: stay indoors with the purifier running.']];
-const RANGES={'6h':'minutes=360','24h':'days=1&average=10','7d':'days=7&average=60'};
+const ARCHIVE='https://raw.githubusercontent.com/vir92/home-air/main/data/daily.csv';
+const FIRST_DAY='2026-11-18';
+const MIN=60e3,HR=3600e3,DAY=86400e3;
+const RANGES={
+ '6h': {span:6*HR, avg:0, gap:5*MIN, note:'1-minute readings'},
+ '24h':{span:DAY, avg:0, gap:5*MIN, note:'1-minute readings'},
+ '7d': {span:7*DAY, avg:10, gap:35*MIN, note:'10-minute averages'},
+ '30d':{span:30*DAY, avg:60, gap:3.5*HR, note:'1-hour averages'},
+ 'all':{daily:true, gap:2.5*DAY, note:'Daily averages · bars show each day’s low–high'},
+ 'day':{span:DAY, avg:0, gap:5*MIN}};
 const $=id=>document.getElementById(id);
 const store={get(k,d){try{return localStorage.getItem(k)||d}catch(e){return d}},set(k,v){try{localStorage.setItem(k,v)}catch(e){}}};
-let range=store.get('range','24h');if(!RANGES[range])range='24h';
-let series=[];
+let range=store.get('range','24h');if(!RANGES[range]||range=='day')range='24h';
+let day=null,series=[],dom=[0,1],geom=null,hoverT=null,loading=true,reqId=0;
 const bandOf=v=>{for(let i=0;i<6;i++)if(v<=EDGES[i+1])return i;return 5};
 const pos=v=>{const i=bandOf(v),f=Math.min(1,Math.max(0,(v-EDGES[i])/(EDGES[i+1]-EDGES[i])));return (i+f)/6*100};
 // PM2.5 / PM10 sub-index bands (US EPA 2024)
 const B25=[9,35.4,55.4,125.4,225.4],B10=[54,154,254,354,424];
 const pmBand=(v,t)=>{for(let i=0;i<5;i++)if(v<=t[i])return i;return 5};
 const num=v=>v==null||v===''?null:+v;
-function setSeg(){document.querySelectorAll('#rangeSeg button').forEach(b=>b.classList.toggle('on',b.dataset.r==range))}
+function setSeg(){document.querySelectorAll('#rangeSeg button').forEach(b=>b.classList.toggle('on',b.dataset.r==range));$('day').classList.toggle('on',range=='day')}
 $('bar').innerHTML=BANDS.map(b=>'<span style="background:'+b[1]+'"></span>').join('');
 $('names').innerHTML=BANDS.map(b=>'<span>'+b[0]+'</span>').join('');
 $('ticks').innerHTML=EDGES.map((e,i)=>'<span style="left:'+(i/6*100)+'%">'+e+'</span>').join('');
-document.querySelectorAll('#rangeSeg button').forEach(b=>b.onclick=()=>{range=b.dataset.r;store.set('range',range);setSeg();loadHistory()});
+document.querySelectorAll('#rangeSeg button').forEach(b=>b.onclick=()=>{range=b.dataset.r;day=null;$('day').value='';store.set('range',range);setSeg();hoverT=null;loadHistory()});
+const ymd=d=>d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+$('day').min=FIRST_DAY;$('day').max=ymd(new Date());
+$('day').onchange=e=>{if(!e.target.value)return;day=e.target.value;range='day';setSeg();hoverT=null;loadHistory()};
 
 function ago(ms){const m=Math.round(ms/60000);if(m<1)return 'just now';if(m<60)return m+' min ago';const h=Math.floor(m/60);if(h<24)return h+' h '+(m%60)+' min ago';return Math.floor(h/24)+' days ago'}
 
@@ -166,37 +206,175 @@ async function loadLatest(){
   const f=await r.json();if(f&&f.created_at)render(f);else{$('status').textContent='No data yet'}
  }catch(e){$('dot').className='dot';$('status').textContent='Cannot reach ThingSpeak'}}
 
-async function loadHistory(){
- try{const r=await fetch('https://api.thingspeak.com/channels/'+CH+'/feeds.json?api_key='+KEY+'&'+RANGES[range]+'&round=1',{cache:'no-store'});
-  const d=await r.json();
-  series=(d.feeds||[]).map(f=>({t:new Date(f.created_at).getTime(),i:num(f.field4),o:num(f.field5)})).filter(p=>p.i!=null||p.o!=null);
-  draw();
- }catch(e){}}
+// ---------- history ----------
+const tsUtc=ms=>new Date(ms).toISOString().slice(0,19).replace('T',' ');
+const pad2=n=>String(n).padStart(2,'0');
+const localStamp=t=>{const d=new Date(t);return ymd(d)+' '+pad2(d.getHours())+':'+pad2(d.getMinutes())};
+async function fetchSpan(t0,t1,avg){
+ // ThingSpeak returns at most 8000 rows per request, so ask in 5-day pieces
+ const jobs=[];
+ for(let a=t0;a<t1;a+=5*DAY){const b=Math.min(t1,a+5*DAY);
+  jobs.push(fetch('https://api.thingspeak.com/channels/'+CH+'/feeds.json?api_key='+KEY+'&start='+encodeURIComponent(tsUtc(a))+'&end='+encodeURIComponent(tsUtc(b))+'&results=8000&round=1'+(avg?'&average='+avg:''),{cache:'no-store'}).then(r=>r.json()))}
+ const m=new Map();
+ for(const d of await Promise.all(jobs))for(const f of d.feeds||[]){
+  const p={t:new Date(f.created_at).getTime(),i:num(f.field4),o:num(f.field5),p1:num(f.field1),p25:num(f.field2),p10:num(f.field3),op:num(f.field6),tc:num(f.field7),hu:num(f.field8)};
+  if(p.i!=null||p.o!=null)m.set(p.t,p)}
+ return [...m.values()].sort((a,b)=>a.t-b.t);
+}
+async function fetchDaily(){
+ const r=await fetch(ARCHIVE+'?t='+Date.now(),{cache:'no-store'});if(!r.ok)return [];
+ const rows=(await r.text()).trim().split('\n'),h=rows.shift().split(',');
+ return rows.map(l=>{const v=l.split(','),o={};h.forEach((k,j)=>o[k]=v[j]);return o}).filter(o=>+o.readings>0)
+  .map(o=>({t:new Date(o.date+'T12:00:00+05:30').getTime(),date:o.date,n:+o.readings,i:num(o.indoor_avg),imin:num(o.indoor_min),imax:num(o.indoor_max),p25:num(o.pm25_avg),o:num(o.outdoor_avg)}));
+}
+async function loadHistory(quiet){
+ const R=RANGES[range],id=++reqId;
+ if(!quiet){loading=true;$('cnote').textContent='Loading…';series=[];draw();$('stats').innerHTML=''}
+ try{let pts,t0,t1;
+  if(R.daily){pts=await fetchDaily();
+   if(pts.length){t0=pts[0].t-.6*DAY;t1=pts[pts.length-1].t+.6*DAY}else{t1=Date.now();t0=t1-7*DAY}}
+  else if(range=='day'){const [y,m,d]=day.split('-').map(Number);t0=new Date(y,m-1,d).getTime();t1=t0+DAY;pts=await fetchSpan(t0,Math.min(t1,Date.now()),0)}
+  else{t1=Date.now();t0=t1-R.span;pts=await fetchSpan(t0,t1,R.avg);
+   // monitor is newer than the range: start the chart where the data starts
+   if(pts.length&&pts[0].t-t0>R.span*.15)t0=pts[0].t-(t1-pts[0].t)*.02}
+  if(id!=reqId)return;
+  loading=false;series=pts;dom=[t0,t1];
+  $('cnote').textContent=range=='day'?'1-minute readings · '+new Date(t0).toLocaleDateString('en-IN',{weekday:'long',day:'numeric',month:'short'})
+   :R.daily&&!pts.length?'The archive adds one row each night. Check back tomorrow.':R.note;
+  draw();stats();
+ }catch(e){if(id==reqId){loading=false;$('cnote').textContent='Could not load history';draw()}}
+}
+
+// time axis: pick a step that gives about one label per 70px, aligned to local hours / midnights
+function ticks(t0,t1,w){
+ const span=t1-t0,want=Math.max(3,Math.floor(w/70));
+ const steps=[HR,2*HR,3*HR,6*HR,12*HR,DAY,2*DAY,5*DAY,7*DAY,14*DAY,30*DAY];
+ const step=steps.find(s=>span/s<=want)||steps[steps.length-1],out=[],d=new Date(t0);
+ if(step<DAY){d.setMinutes(0,0,0);for(;d.getTime()<=t1;d.setHours(d.getHours()+1))if(d.getTime()>=t0&&d.getHours()%(step/HR)==0)out.push(d.getTime())}
+ else{d.setHours(0,0,0,0);if(d.getTime()<t0)d.setDate(d.getDate()+1);for(let k=0;d.getTime()<=t1;d.setDate(d.getDate()+1),k++)if(k%(step/DAY)==0)out.push(d.getTime())}
+ return {step,out};
+}
+const fHour=t=>new Date(t).toLocaleTimeString('en-IN',{hour:'numeric',hour12:true}).replace(/\s/g,'').toLowerCase();
+const fWeek=t=>new Date(t).toLocaleDateString('en-IN',{weekday:'short',day:'numeric'});
+const fDate=t=>new Date(t).toLocaleDateString('en-IN',{day:'numeric',month:'short'});
+
+function nearest(pts,t){let lo=0,hi=pts.length-1;if(hi<0)return null;
+ while(hi-lo>1){const m=(lo+hi)>>1;if(pts[m].t<t)lo=m;else hi=m}
+ return Math.abs(pts[lo].t-t)<=Math.abs(pts[hi].t-t)?pts[lo]:pts[hi]}
 
 function draw(){
  const c=$('c'),r=devicePixelRatio||1,W=c.clientWidth,H=c.clientHeight;
  c.width=W*r;c.height=H*r;const g=c.getContext('2d');g.scale(r,r);
- const cs=getComputedStyle(document.documentElement),muted=cs.getPropertyValue('--muted').trim(),line=cs.getPropertyValue('--line').trim();
- const span={'6h':6,'24h':24,'7d':168}[range]*3600e3,now=Date.now(),t0=now-span;
- const pts=series.filter(p=>p.t>=t0);
- const pad={l:30,r:6,t:10,b:20},w=W-pad.l-pad.r,hh=H-pad.t-pad.b;
- const vals=pts.flatMap(p=>[p.i,p.o]).filter(v=>v!=null);
- const max=Math.max(60,...vals)*1.12,X=t=>pad.l+w*(t-t0)/span,Y=v=>pad.t+hh-v/max*hh;
- g.font='11px system-ui,sans-serif';g.lineWidth=1;
- for(const e of EDGES){if(e>max)continue;g.strokeStyle=line;g.beginPath();g.moveTo(pad.l,Y(e));g.lineTo(W-pad.r,Y(e));g.stroke();g.fillStyle=muted;g.fillText(e,2,Y(e)+4)}
- g.fillStyle=muted;g.fillText('-'+range,pad.l,H-4);g.textAlign='right';g.fillText('now',W-pad.r,H-4);g.textAlign='left';
- if(pts.length<2){g.fillText('Collecting data…',pad.l+8,pad.t+20);return}
- const gap=Math.max(15*60e3,span/40);
- // outdoor: thin muted line
- g.strokeStyle=muted;g.globalAlpha=.6;g.lineWidth=1.5;g.setLineDash([4,3]);g.beginPath();let on=false,prev=0;
+ const cs=getComputedStyle(document.documentElement),v=k=>cs.getPropertyValue(k).trim();
+ const muted=v('--muted'),line=v('--line'),text=v('--text'),card=v('--card');
+ const [t0,t1]=dom,span=t1-t0,R=RANGES[range];
+ const pts=series.filter(p=>p.t>=t0&&p.t<=t1);
+ const pad={l:32,r:8,t:8,b:24},w=W-pad.l-pad.r,hh=H-pad.t-pad.b;
+ const vals=pts.flatMap(p=>[p.i,p.o,p.imax]).filter(x=>x!=null);
+ const max=Math.ceil(Math.max(60,...vals)*1.08/50)*50;
+ const X=t=>pad.l+w*(t-t0)/span,Y=x=>pad.t+hh-Math.min(x,max)/max*hh;
+ geom={pad,w,t0,span};
+ // faint band colours behind the chart
+ for(let i=0;i<6&&EDGES[i]<max;i++){const top=Math.min(EDGES[i+1],max);g.globalAlpha=.08;g.fillStyle=BANDS[i][1];g.fillRect(pad.l,Y(top),w,Y(EDGES[i])-Y(top))}
+ g.globalAlpha=1;g.font='11px system-ui,sans-serif';g.lineWidth=1;
+ // AQI grid at the band edges (plus 250/350/400 when the chart goes that high)
+ g.textAlign='right';g.textBaseline='middle';
+ for(const e of [0,50,100,150,200,250,300,350,400,450,500]){if(e>max)break;if(max>300&&e%100&&e>200)continue;
+  g.strokeStyle=line;g.beginPath();g.moveTo(pad.l,Math.round(Y(e))+.5);g.lineTo(W-pad.r,Math.round(Y(e))+.5);g.stroke();g.fillStyle=muted;g.fillText(e,pad.l-6,Y(e))}
+ // time grid
+ if(span>0){const tk=ticks(t0,t1,w);g.textAlign='center';g.textBaseline='top';
+  for(const t of tk.out){const x=Math.round(X(t))+.5,d=new Date(t);
+   g.strokeStyle=line;g.globalAlpha=.7;g.beginPath();g.moveTo(x,pad.t);g.lineTo(x,pad.t+hh);g.stroke();g.globalAlpha=1;
+   const lab=tk.step<DAY?(d.getHours()==0?fWeek(t):fHour(t)):span<=8*DAY?fWeek(t):fDate(t);
+   g.fillStyle=muted;g.fillText(lab,Math.min(Math.max(x,pad.l+16),W-pad.r-16),pad.t+hh+7)}}
+ if(!pts.length){g.textAlign='left';g.textBaseline='alphabetic';g.fillStyle=muted;
+  g.fillText(loading?'Loading…':'No readings in this period',pad.l+10,pad.t+24);$('tip').style.display='none';return}
+ const gap=R.gap;
+ // daily low–high bars
+ if(R.daily){const bw=Math.max(3,Math.min(14,w/(span/DAY)*.45));g.fillStyle=text;g.globalAlpha=.13;
+  for(const p of pts)if(p.imin!=null&&p.imax!=null)g.fillRect(X(p.t)-bw/2,Y(p.imax),bw,Math.max(1,Y(p.imin)-Y(p.imax)));g.globalAlpha=1}
+ // outdoor: dashed line
+ g.strokeStyle=muted;g.globalAlpha=.75;g.lineWidth=1.5;g.setLineDash([4,3]);g.beginPath();
+ let on=false,prev=0;
  for(const p of pts){if(p.o==null){on=false;continue}if(on&&p.t-prev<gap)g.lineTo(X(p.t),Y(p.o));else g.moveTo(X(p.t),Y(p.o));on=true;prev=p.t}
  g.stroke();g.setLineDash([]);g.globalAlpha=1;
- // indoor: thick line coloured by band
- g.lineWidth=2.5;g.lineJoin='round';g.lineCap='round';
- for(let k=1;k<pts.length;k++){const a=pts[k-1],b=pts[k];if(a.i==null||b.i==null||b.t-a.t>gap)continue;
-  g.strokeStyle=BANDS[bandOf(b.i)][1];g.beginPath();g.moveTo(X(a.t),Y(a.i));g.lineTo(X(b.t),Y(b.i));g.stroke()}
+ // indoor: line coloured by band (one path per run of the same colour)
+ g.lineWidth=2.2;g.lineJoin='round';g.lineCap='round';
+ let col=null;g.beginPath();
+ for(let k=1;k<pts.length;k++){const a=pts[k-1],b=pts[k];
+  if(a.i==null||b.i==null||b.t-a.t>gap)continue;
+  const cb=BANDS[bandOf((a.i+b.i)/2)][1];
+  if(cb!=col){if(col)g.stroke();col=cb;g.strokeStyle=cb;g.beginPath()}
+  g.moveTo(X(a.t),Y(a.i));g.lineTo(X(b.t),Y(b.i))}
+ if(col)g.stroke();
+ if(R.daily)for(const p of pts)if(p.i!=null){g.fillStyle=BANDS[bandOf(p.i)][1];g.beginPath();g.arc(X(p.t),Y(p.i),3.5,0,7);g.fill()}
+ // hover / touch
+ const p=hoverT==null?null:nearest(pts,hoverT);
+ if(!p||Math.abs(p.t-hoverT)>Math.max(gap,span/w*12)){$('tip').style.display='none';return}
+ const x=X(p.t);
+ g.strokeStyle=text;g.globalAlpha=.45;g.lineWidth=1;g.beginPath();g.moveTo(Math.round(x)+.5,pad.t);g.lineTo(Math.round(x)+.5,pad.t+hh);g.stroke();g.globalAlpha=1;
+ const dot=(val,fill)=>{g.beginPath();g.arc(x,Y(val),5,0,7);g.fillStyle=fill;g.fill();g.lineWidth=2;g.strokeStyle=card;g.stroke()};
+ if(p.o!=null)dot(p.o,muted);
+ if(p.i!=null)dot(p.i,BANDS[bandOf(p.i)][1]);
+ showTip(p,x);
 }
+
+function chip(v){const i=bandOf(v),b=BANDS[i];return '<span class="chip" style="background:'+b[1]+';color:'+(i<=2?'#111':'#fff')+'">'+b[0]+'</span>'}
+function showTip(p,x){
+ const R=RANGES[range],tip=$('tip');
+ const when=R.daily?new Date(p.t).toLocaleDateString('en-IN',{weekday:'short',day:'numeric',month:'short',year:'numeric'})
+  :new Date(p.t).toLocaleString('en-IN',{weekday:'short',day:'numeric',month:'short',hour:'numeric',minute:'2-digit',hour12:true});
+ let h='<div class="tt">'+when+'</div>';
+ if(p.i!=null){h+='<div class="tr"><i style="background:'+BANDS[bandOf(p.i)][1]+'"></i>Indoor '+chip(p.i)+'<b>'+Math.round(p.i)+'</b></div>';
+  const pm=[];if(p.p25!=null)pm.push('PM2.5 '+Math.round(p.p25));if(p.p10!=null)pm.push('PM10 '+Math.round(p.p10));
+  if(pm.length)h+='<div class="ts">'+pm.join(' · ')+' µg/m³</div>';
+  if(R.daily&&p.imin!=null)h+='<div class="ts">Low '+Math.round(p.imin)+' · High '+Math.round(p.imax)+'</div>'}
+ if(p.o!=null)h+='<div class="tr"><i class="dash"></i>Outdoor '+chip(p.o)+'<b>'+Math.round(p.o)+'</b></div>';
+ if(p.i!=null&&p.o){const d=Math.round((1-p.i/p.o)*100);h+='<div class="ts">'+(d>=0?'Indoor '+d+'% lower than outside':'Indoor '+(-d)+'% higher than outside')+'</div>'}
+ const kind=R.daily?'Daily average':R.avg==60?'1-hour average':R.avg?R.avg+'-minute average':'';
+ if(kind)h+='<div class="ts">'+kind+'</div>';
+ tip.innerHTML=h;tip.style.display='block';
+ const cw=$('cwrap').clientWidth,tw=tip.offsetWidth;
+ let l=x+14;if(l+tw>cw)l=x-14-tw;if(l<0)l=Math.max(0,Math.min(cw-tw,x-tw/2));
+ tip.style.left=l+'px';
+}
+
+function stats(){
+ const R=RANGES[range],pts=series.filter(p=>p.t>=dom[0]&&p.t<=dom[1]);
+ const I=pts.map(p=>p.i).filter(x=>x!=null),O=pts.map(p=>p.o).filter(x=>x!=null);
+ if(!I.length){$('stats').innerHTML='';return}
+ const avg=a=>a.reduce((s,x)=>s+x,0)/a.length;
+ const lo=R.daily?Math.min(...pts.map(p=>p.imin??p.i)):Math.min(...I),hi=R.daily?Math.max(...pts.map(p=>p.imax??p.i)):Math.max(...I);
+ const ai=avg(I),ao=O.length?avg(O):null;
+ const cell=(k,x,sub)=>'<div class="st"><div class="sk">'+k+'</div><div class="sv" style="color:'+(x==null?'var(--muted)':BANDS[bandOf(x)][1])+'">'+(x==null?'--':Math.round(x))+'</div><div class="ss">'+sub+'</div></div>';
+ const d=ao?Math.round((1-ai/ao)*100):null;
+ $('stats').innerHTML=cell('Average',ai,BANDS[bandOf(ai)][0])+cell('Lowest',lo,BANDS[bandOf(lo)][0])+cell('Highest',hi,BANDS[bandOf(hi)][0])
+  +cell('Outside',ao,d==null?'':'indoor '+(d>=0?'−'+d:'+'+(-d))+'%');
+}
+
+$('dl').onclick=()=>{
+ if(!series.length)return;
+ const R=RANGES[range];let csv;
+ if(R.daily)csv='date,readings,indoor_aqi_avg,indoor_aqi_min,indoor_aqi_max,pm25_avg,outdoor_aqi_avg\n'+series.map(p=>[p.date,p.n,p.i,p.imin,p.imax,p.p25,p.o].map(x=>x??'').join(',')).join('\n');
+ else csv='time,indoor_aqi,pm1,pm25,pm10,outdoor_aqi,outdoor_pm25,outdoor_temp_c,outdoor_humidity\n'+series.map(p=>[localStamp(p.t),p.i,p.p1,p.p25,p.p10,p.o,p.op,p.tc,p.hu].map(x=>x??'').join(',')).join('\n');
+ const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv+'\n'],{type:'text/csv'}));
+ a.download='home-air-'+(range=='day'?day:range)+'-'+ymd(new Date())+'.csv';document.body.appendChild(a);a.click();a.remove();
+ setTimeout(()=>URL.revokeObjectURL(a.href),2000);
+};
+
+// hover with a mouse, or tap / drag sideways on a phone
+const cv=$('c');
+function pick(e){if(!geom)return;const x=e.clientX-cv.getBoundingClientRect().left,{pad,w,t0,span}=geom;
+ hoverT=t0+Math.min(1,Math.max(0,(x-pad.l)/w))*span;draw()}
+cv.addEventListener('pointermove',e=>{if(e.pointerType=='mouse'||e.buttons||e.pressure)pick(e)});
+cv.addEventListener('pointerdown',pick);
+cv.addEventListener('pointerleave',e=>{if(e.pointerType=='mouse'){hoverT=null;draw()}});
+document.addEventListener('pointerdown',e=>{if(hoverT!=null&&!$('cwrap').contains(e.target)){hoverT=null;draw()}});
+
 setSeg();loadLatest();loadHistory();
-setInterval(loadLatest,30000);setInterval(loadHistory,5*60000);
+let tick=0;
+setInterval(loadLatest,30000);
+setInterval(()=>{tick++;const today=range=='day'&&day==ymd(new Date());
+ if(range=='6h'||range=='24h'||today||((range=='7d'||range=='30d')&&tick%5==0)||(range=='all'&&tick%60==0))loadHistory(true)},60000);
 addEventListener('resize',draw);
 </script></body></html>
