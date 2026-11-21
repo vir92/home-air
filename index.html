@@ -108,8 +108,8 @@ canvas{width:100%;height:250px;display:block;touch-action:pan-y;cursor:crosshair
 <div class="card ocard">
  <div class="lbl" style="margin-bottom:10px">Outdoor AQI &middot; Bhagwanpur</div>
  <!-- official aqi.in widget (live, from aqi.in) -->
- <div class="aqiw" data-aqi-widget-payload="https://www.aqi.in/widget/809a2091c8d6b6254d5f"><script src="https://www.aqi.in/assets/scripts/widget.min.js"></script></div>
- <div class="osec">GraphGraph&rsquo;s outdoor line (IQAir): rsquo;s outdoor line (IQAir / Open-Meteo): <b id="oaqi">--</b> <span class="opill" id="opill">&hellip;</span> &middot; PM2.5 <b id="op25">--</b><div id="owx"></div></div>
+ <div class="aqiw" id="aqiw"></div>
+ <div class="osec">Graph&rsquo;s outdoor line (IQAir / Open-Meteo): <b id="oaqi">--</b> <span class="opill" id="opill">&hellip;</span> &middot; PM2.5 <b id="op25">--</b><div id="owx"></div></div>
 </div>
 
 <div class="card">
@@ -343,6 +343,17 @@ cv.addEventListener('pointerdown',pick);
 cv.addEventListener('pointerleave',e=>{if(e.pointerType=='mouse'){hoverT=null;draw()}});
 document.addEventListener('pointerdown',e=>{if(hoverT!=null&&!$('cwrap').contains(e.target)){hoverT=null;draw()}});
 
+// aqi.in widget. Their CDN can serve a copy that is an hour old, so ask for a fresh copy
+// (the ?t= value changes every 10 minutes) and reload it every 10 minutes.
+(function(){
+ const URL0='https://www.aqi.in/widget/809a2091c8d6b6254d5f',src=()=>URL0+'?t='+Math.floor(Date.now()/600000);
+ const f=document.createElement('iframe');f.src=src();f.style.width='100%';f.style.border='0';f.scrolling='no';f.title='Outdoor AQI from aqi.in';
+ document.getElementById('aqiw').appendChild(f);
+ const s=document.createElement('script');s.src='https://cdnjs.cloudflare.com/ajax/libs/iframe-resizer/4.3.2/iframeResizer.min.js';
+ s.onload=()=>iFrameResize({log:false,checkOrigin:false},f);document.head.appendChild(s);
+ setInterval(()=>{f.src=src()},600000);
+ document.addEventListener('visibilitychange',()=>{if(!document.hidden&&f.src!=src())f.src=src()});
+})();
 setSeg();loadLatest();loadHistory();
 let tick=0;
 setInterval(loadLatest,30000);
